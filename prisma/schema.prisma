@@ -1,0 +1,24 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Report {
+  id               Int      @id @default(autoincrement())
+  filename         String   @db.VarChar(255)
+  rowCount         Int?     @map("row_count")
+  columnCount      Int?     @map("column_count")
+  columnsAnalyzed  String[] @map("columns_analyzed")
+  insightsSummary  String?  @map("insights_summary") @db.Text
+  trends           String?  @db.Text
+  outliers         String?  @db.Text
+  recommendations  String?  @db.Text
+  csvPreviewJson   Json?    @map("csv_preview_json")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  @@map("reports")
+}
