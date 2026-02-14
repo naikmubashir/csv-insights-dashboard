@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
 import { checkDatabaseHealth } from "@/lib/db";
 import { checkGeminiHealth } from "@/lib/gemini";
+import { logger, generateRequestId } from "@/lib/logger";
 
 export async function GET() {
+  const requestId = generateRequestId();
+
   try {
     const [dbHealthy, llmHealthy] = await Promise.all([
       checkDatabaseHealth(),
@@ -10,6 +13,12 @@ export async function GET() {
     ]);
 
     const status = dbHealthy && llmHealthy ? "healthy" : "unhealthy";
+
+    logger.info("Health check completed", {
+      context: "api/status",
+      requestId,
+      metadata: { status, database: dbHealthy, llm: llmHealthy },
+    });
 
     return NextResponse.json({
       status,
@@ -28,7 +37,11 @@ export async function GET() {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    console.error("Status check error:", error);
+    logger.error("Health check failed", {
+      context: "api/status",
+      requestId,
+      error,
+    });
     return NextResponse.json(
       {
         status: "unhealthy",

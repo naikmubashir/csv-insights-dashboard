@@ -1,44 +1,54 @@
 import { NextRequest, NextResponse } from "next/server";
 import { saveReport, getReports } from "@/lib/db";
+import { logger, generateRequestId } from "@/lib/logger";
+import { SaveReportSchema, safeValidate } from "@/lib/validation";
 
 export async function POST(request: NextRequest) {
+  const requestId = generateRequestId();
+
   try {
     const body = await request.json();
 
-    const {
-      filename,
-      rowCount,
-      columnCount,
-      columnsAnalyzed,
-      insightsSummary,
-      trends,
-      outliers,
-      recommendations,
-      csvPreviewJson,
-    } = body;
-
-    if (!filename || !insightsSummary) {
+    const validation = safeValidate(SaveReportSchema, body);
+    if (!validation.success) {
+      logger.warn("Save report validation failed", {
+        context: "api/reports",
+        requestId,
+        metadata: { error: validation.error },
+      });
       return NextResponse.json(
-        { error: "Missing required fields" },
+        { error: `Invalid request: ${validation.error}` },
         { status: 400 }
       );
     }
 
+    const data = validation.data;
+
     const report = await saveReport({
-      filename,
-      rowCount: rowCount || 0,
-      columnCount: columnCount || 0,
-      columnsAnalyzed: columnsAnalyzed || [],
-      insightsSummary,
-      trends: trends || "",
-      outliers: outliers || "",
-      recommendations: recommendations || "",
-      csvPreviewJson: csvPreviewJson || [],
+      filename: data.filename,
+      rowCount: data.rowCount,
+      columnCount: data.columnCount,
+      columnsAnalyzed: data.columnsAnalyzed,
+      insightsSummary: data.insightsSummary,
+      trends: data.trends,
+      outliers: data.outliers,
+      recommendations: data.recommendations,
+      csvPreviewJson: data.csvPreviewJson,
+    });
+
+    logger.info("Report saved successfully", {
+      context: "api/reports",
+      requestId,
+      metadata: { reportId: report.id, filename: data.filename },
     });
 
     return NextResponse.json({ report }, { status: 201 });
   } catch (error) {
-    console.error("Save report error:", error);
+    logger.error("Failed to save report", {
+      context: "api/reports",
+      requestId,
+      error,
+    });
     return NextResponse.json(
       { error: "Failed to save report" },
       { status: 500 }
@@ -47,11 +57,24 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET() {
+  const requestId = generateRequestId();
+
   try {
     const reports = await getReports(5);
+
+    logger.info("Reports fetched", {
+      context: "api/reports",
+      requestId,
+      metadata: { count: reports.length },
+    });
+
     return NextResponse.json({ reports });
   } catch (error) {
-    console.error("Get reports error:", error);
+    logger.error("Failed to fetch reports", {
+      context: "api/reports",
+      requestId,
+      error,
+    });
     return NextResponse.json(
       { error: "Failed to fetch reports" },
       { status: 500 }

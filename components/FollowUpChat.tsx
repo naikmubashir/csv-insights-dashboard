@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Send, Loader2 } from "lucide-react";
+import { SafeHtml } from "@/components/SafeText";
 
 interface FollowUpChatProps {
   reportId?: number;
@@ -90,7 +91,7 @@ export default function FollowUpChat({
                     : "bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200"
                 }`}
               >
-                <div className="whitespace-pre-wrap">{msg.content}</div>
+                <SafeHtml text={msg.content} />
               </div>
             </div>
           ))}

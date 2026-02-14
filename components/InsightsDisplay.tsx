@@ -2,6 +2,7 @@
 
 import { InsightsResponse } from "@/types";
 import { FileText, TrendingUp, AlertTriangle, Lightbulb } from "lucide-react";
+import { SafeHtml } from "@/components/SafeText";
 
 interface InsightsDisplayProps {
   insights: InsightsResponse;
@@ -74,9 +75,10 @@ export default function InsightsDisplay({ insights }: InsightsDisplayProps) {
                 {section.title}
               </h3>
             </div>
-            <div className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed whitespace-pre-wrap">
-              {section.content}
-            </div>
+            <SafeHtml
+              text={section.content}
+              className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed"
+            />
           </div>
         );
       })}
